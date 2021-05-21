@@ -23,8 +23,9 @@ Online ticket reservation system for flight reservation  using spring boot as ba
 1. Login to the admin dashboard.
 2. Add Events for booking.
 3. Add payment method for payment.
-4. Login to user dashboard
-5. Book any events
+5. Login to user dashboard
+6. Book any events
+7. Booking view available at http://127.0.0.1:4200/bookings
 
 ### How to run this?
 1. https://github.com/anilmaharjan87/online-ticket-reservation-backend <br/>

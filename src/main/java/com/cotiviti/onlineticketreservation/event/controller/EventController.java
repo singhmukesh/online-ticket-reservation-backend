@@ -40,7 +40,7 @@ public class EventController {
         return new ResponseEntity(eventService.getEventInfoById(eventId), HttpStatus.CREATED);
     }
 
-    @GetMapping
+    @GetMapping("/all")
     public ResponseEntity<EventPageDto> getEvents(@RequestParam(value = "page", required = false) Integer page,
                                                   @RequestParam(value = "per-page", required = false) Integer perPage,
                                                   @RequestParam(value = "sort-by", required = false) String sortBy,
