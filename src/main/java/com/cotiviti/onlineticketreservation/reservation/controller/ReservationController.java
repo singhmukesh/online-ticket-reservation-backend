@@ -4,27 +4,38 @@ import com.cotiviti.onlineticketreservation.reservation.dto.BookingInfoDto;
 import com.cotiviti.onlineticketreservation.reservation.dto.ReservationDto;
 import com.cotiviti.onlineticketreservation.reservation.dto.ReservationPageDto;
 import com.cotiviti.onlineticketreservation.reservation.service.ReservationService;
+import com.cotiviti.onlineticketreservation.util.FieldValidationService;
+import com.cotiviti.onlineticketreservation.util.Response;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
 import java.util.List;
 import java.util.Map;
+
+import static com.cotiviti.onlineticketreservation.util.PaginationUtil.getPageRequest;
 
 @RestController
 @RequestMapping("/api/v1/reservation")
 public class ReservationController {
     private final ReservationService reservationService;
+    private final FieldValidationService fieldValidationService;
 
-    public ReservationController(ReservationService reservationService) {
+    public ReservationController(ReservationService reservationService, FieldValidationService fieldValidationService) {
         this.reservationService = reservationService;
+        this.fieldValidationService = fieldValidationService;
     }
 
     @PostMapping
-    public ResponseEntity<ReservationDto> save(@RequestBody ReservationDto reservationDto) {
-        return new ResponseEntity(reservationService.save(reservationDto), HttpStatus.CREATED);
+    public ResponseEntity<?> save(@Valid @RequestBody ReservationDto reservationDto, BindingResult result) {
+        ResponseEntity<?> errorMap = fieldValidationService.fieldValidation(result);
+        if (errorMap != null) {
+            return errorMap;
+        }
+        return new Response().success(reservationService.save(reservationDto));
     }
 
     @GetMapping("/{id}")
@@ -67,17 +78,5 @@ public class ReservationController {
         return new ResponseEntity(reservationPageDto, HttpStatus.OK);
     }
 
-    private PageRequest getPageRequest(@RequestParam(value = "page", required = false) Integer page, @RequestParam(value = "per-page", required = false) Integer perPage, @RequestParam(value = "sort-by", required = false) String sortBy, @RequestParam(value = "order", required = false) String order) {
-        PageRequest pageRequest;
-        if (page != null && perPage != null && !sortBy.isBlank() && order.equals("desc")) {
-            pageRequest = PageRequest.of(page, perPage, Sort.by(sortBy).descending());
-        } else if (page != null && perPage != null && !sortBy.isBlank() && order.equals("asc")) {
-            pageRequest = PageRequest.of(page, perPage, Sort.by(sortBy).ascending());
-        } else if (page != null && perPage != null) {
-            pageRequest = PageRequest.of(page, perPage, Sort.by("id").ascending());
-        } else {
-            pageRequest = PageRequest.of(0, 5, Sort.by("id").ascending());
-        }
-        return pageRequest;
-    }
+
 }

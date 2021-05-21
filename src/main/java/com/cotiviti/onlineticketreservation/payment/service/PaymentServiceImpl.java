@@ -3,6 +3,7 @@ package com.cotiviti.onlineticketreservation.payment.service;
 import com.cotiviti.onlineticketreservation.enums.ReservationStatus;
 import com.cotiviti.onlineticketreservation.event.dto.EventDto;
 import com.cotiviti.onlineticketreservation.event.service.EventService;
+import com.cotiviti.onlineticketreservation.exception.PaymentNotFoundException;
 import com.cotiviti.onlineticketreservation.payment.dto.PaymentDto;
 import com.cotiviti.onlineticketreservation.payment.dto.PaymentPageDto;
 import com.cotiviti.onlineticketreservation.payment.dto.PaymentRequestDto;
@@ -14,11 +15,14 @@ import com.cotiviti.onlineticketreservation.reservation.service.ReservationServi
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
+@Transactional(rollbackFor = Exception.class, readOnly = true)
 public class PaymentServiceImpl implements PaymentService {
     private final PaymentRepository paymentRepository;
     private final ReservationService reservationService;
@@ -31,6 +35,7 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     @Override
+    @Transactional(readOnly = false)
     public PaymentDto save(PaymentDto paymentDto) {
         PaymentDto returnValue = new PaymentDto();
         Payment payment = paymentRepository.save(PaymentMapper.INSTANCE.toEntity(paymentDto));
@@ -51,18 +56,19 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     @Override
+    @Transactional(readOnly = false)
     public void delete(Long id) {
-        paymentRepository.deleteById(id);
+        PaymentDto paymentDto = getById(id);
+        paymentRepository.deleteById(paymentDto.getId());
     }
 
     @Override
     public PaymentDto getById(Long id) {
-        PaymentDto paymentDto = new PaymentDto();
-        Payment payment = paymentRepository.findById(id).get();
-        if (payment != null) {
-            paymentDto = PaymentMapper.INSTANCE.toDto(payment);
+        Optional<Payment> payment = paymentRepository.findById(id);
+        if (!payment.isPresent()) {
+            throw new PaymentNotFoundException("Payment with id " + id + " not found");
         }
-        return paymentDto;
+        return PaymentMapper.INSTANCE.toDto(payment.get());
     }
 
     @Override
@@ -76,6 +82,7 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     @Override
+    @Transactional(readOnly = false)
     public PaymentRequestDto pay(PaymentRequestDto paymentDto) {
         ReservationRequestDto reservation = reservationService.getById(paymentDto.getReservationId());
         reservation.setPaymentId(paymentDto.getPaymentMethod().getId());

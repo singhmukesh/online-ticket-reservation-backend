@@ -5,11 +5,13 @@ import com.cotiviti.onlineticketreservation.event.dto.EventPageDto;
 import com.cotiviti.onlineticketreservation.event.entity.Event;
 import com.cotiviti.onlineticketreservation.event.mapper.EventMapper;
 import com.cotiviti.onlineticketreservation.event.repository.EventRepository;
+import com.cotiviti.onlineticketreservation.exception.EventNotFoundException;
 import com.cotiviti.onlineticketreservation.ticket.dto.TicketDto;
 import com.cotiviti.onlineticketreservation.ticket.service.TicketService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,6 +19,7 @@ import java.util.Map;
 import java.util.Optional;
 
 @Service
+@Transactional(rollbackFor = Exception.class, readOnly = true)
 public class EventServiceImpl implements EventService {
     private static final Integer MINIMUM_TICKET_COUNT = 1;
     private final EventRepository eventRepository;
@@ -28,6 +31,7 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
+    @Transactional(readOnly = false)
     public EventDto save(EventDto eventDto) {
         EventDto saveEvent = new EventDto();
         Event event = eventRepository.save(EventMapper.INSTANCE.toEntity(eventDto));
@@ -58,17 +62,18 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public EventDto getEventInfoById(Long eventId) {
-        EventDto eventDto = new EventDto();
         Optional<Event> event = eventRepository.findById(eventId);
-        if (event.isPresent()) {
-            eventDto = EventMapper.INSTANCE.toDto(event.get());
-            TicketDto ticketDto = ticketService.findByEventId(eventDto.getId());
-            eventDto.setTicketDto(ticketDto);
+        if (!event.isPresent()) {
+            throw new EventNotFoundException("Event with event " + eventId + "not found");
         }
+        EventDto eventDto = EventMapper.INSTANCE.toDto(event.get());
+        TicketDto ticketDto = ticketService.findByEventId(eventDto.getId());
+        eventDto.setTicketDto(ticketDto);
         return eventDto;
     }
 
     @Override
+    @Transactional(readOnly = false)
     public void update(EventDto eventDto) {
         eventRepository.save(EventMapper.INSTANCE.toEntity(eventDto));
     }

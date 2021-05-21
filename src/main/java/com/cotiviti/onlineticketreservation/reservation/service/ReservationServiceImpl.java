@@ -4,6 +4,7 @@ import com.cotiviti.onlineticketreservation.config.LoggedInUserDetail;
 import com.cotiviti.onlineticketreservation.enums.ReservationStatus;
 import com.cotiviti.onlineticketreservation.event.dto.EventDto;
 import com.cotiviti.onlineticketreservation.event.service.EventService;
+import com.cotiviti.onlineticketreservation.exception.ReservationNotFoundException;
 import com.cotiviti.onlineticketreservation.reservation.dto.BookingInfoDto;
 import com.cotiviti.onlineticketreservation.reservation.dto.ReservationDto;
 import com.cotiviti.onlineticketreservation.reservation.dto.ReservationPageDto;
@@ -16,10 +17,12 @@ import com.cotiviti.onlineticketreservation.user.dto.UserDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
 @Service
+@Transactional(rollbackFor = Exception.class, readOnly = true)
 public class ReservationServiceImpl implements ReservationService {
     private final ReservationRepository reservationRepository;
     private final LoggedInUserDetail loggedInUserDetail;
@@ -32,6 +35,7 @@ public class ReservationServiceImpl implements ReservationService {
     }
 
     @Override
+    @Transactional(readOnly = false)
     public ReservationDto save(ReservationDto reservationDto) {
         reservationDto.setReservationStatus(ReservationStatus.PENDING);
         reservationDto.setUserId(loggedInUserDetail.getLoggedInUserDetails().getId());
@@ -41,12 +45,12 @@ public class ReservationServiceImpl implements ReservationService {
 
     @Override
     public BookingInfoDto getBookingInfoById(Long id) {
-        BookingInfoDto bookingInfoDto = new BookingInfoDto();
         Optional<Reservation> optionalReservation = reservationRepository.findById(id);
-        if (optionalReservation.isPresent()) {
-            Reservation reservation = optionalReservation.get();
-            bookingInfoDto = populateEventInfo(reservation);
+        if (!optionalReservation.isPresent()) {
+            throw new ReservationNotFoundException("Reservation with id " + id + " not found");
         }
+        Reservation reservation = optionalReservation.get();
+        BookingInfoDto bookingInfoDto = populateEventInfo(reservation);
         return bookingInfoDto;
     }
 
@@ -62,13 +66,14 @@ public class ReservationServiceImpl implements ReservationService {
     @Override
     public ReservationRequestDto getById(Long id) {
         Optional<Reservation> reservation = reservationRepository.findById(id);
-        if (reservation.isPresent()) {
-            return ReservationRequestMapper.INSTANCE.toDto(reservation.get());
+        if (!reservation.isPresent()) {
+            throw new ReservationNotFoundException("Reservation with id " + id + " not found");
         }
-        return null;
+        return ReservationRequestMapper.INSTANCE.toDto(reservation.get());
     }
 
     @Override
+    @Transactional(readOnly = false)
     public ReservationRequestDto updateReservationStatus(ReservationRequestDto reservationRequestDto) {
         Reservation reservation = reservationRepository.save(ReservationRequestMapper.INSTANCE.toEntity(reservationRequestDto));
         return ReservationRequestMapper.INSTANCE.toDto(reservation);

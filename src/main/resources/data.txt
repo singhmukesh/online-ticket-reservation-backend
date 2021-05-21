@@ -24,7 +24,7 @@ INSERT INTO user (id, username, password,phone_number, email, enabled, account_n
 VALUES ('1', 'anil', '{bcrypt}$2y$12$0UrGpzkwu1oT3xsMJNPSxutb8Z8wCP43aDTddFiiWUvG6NHXJd5ai','9823226555', 'admin@gmail.com',
         '1', '1', '1', '1');
 insert into user (id, username, password,phone_number, email, enabled, account_non_expired, credentials_non_expired, account_non_locked)
-VALUES ('2', 'avash', '{bcrypt}$2y$12$0pYrth4wFec0ncO4Dm4A/.3sWLrsF5oOVh8wWtud17JubvQxPRb2u', '9823226555','avash@gmail.com', '1',
+VALUES ('2', 'test', '{bcrypt}$2y$12$zfq0FFRhRb0plLTVXba0EumJ70EZHrdyB1lDBdrn4eyl68tWZEyhu', '9823226555','user@gmail.com', '1',
         '1', '1', '1');
 INSERT INTO role_user(ROLE_ID, USER_ID)
 VALUES (1, 1),

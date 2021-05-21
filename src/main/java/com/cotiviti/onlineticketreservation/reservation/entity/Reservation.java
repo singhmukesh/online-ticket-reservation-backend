@@ -11,6 +11,8 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import javax.persistence.*;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.util.Date;
 
@@ -35,9 +37,13 @@ public class Reservation {
     @ManyToOne
     @JoinColumn(name = "event_id")
     private Event event;
+    @NotBlank(message = "please enter your email")
     private String email;
+    @NotBlank(message = "name is required")
     private String name;
+    @NotNull(message = "phone number is required")
     private String phoneNumber;
+    @NotNull(message = "ticket quantity is required")
     private Integer ticketQuantity;
     @CreationTimestamp
     @Column(updatable = false, nullable = false)
